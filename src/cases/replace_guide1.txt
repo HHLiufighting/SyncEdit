@@ -1,0 +1,2 @@
+# Public example: one replace case only.
+girl_skirt | girl | girl_skirt | guide_pairs=4:20

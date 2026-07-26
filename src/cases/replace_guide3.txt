@@ -1,0 +1,2 @@
+# Public example: one replace case only.
+girl_skirt | girl | girl_skirt | guide_pairs=1:06,3:13,4:20 | owned_indices=1:03,04,05,06,07,08,09;3:10,11,12,13,14,15,16;4:00,01,02,17,18,19,20

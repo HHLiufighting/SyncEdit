@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if (( $# > 1 )); then
+  echo "Usage: bash src/run_sv3d_v6_exp.txt [guide1|guide2|guide3|guide4]" >&2
+  exit 2
+fi
+
+GUIDE_MODE="${1:-guide2}"
+case "${GUIDE_MODE}" in
+  guide1|guide2|guide3|guide4) ;;
+  *) echo "Invalid guide mode: ${GUIDE_MODE}. Expected guide1/guide2/guide3/guide4" >&2; exit 2 ;;
+esac
+
+PYTHON_BIN="${PYTHON_BIN:-python}"
+DEVICE_NUMBER="${DEVICE_NUMBER:-0}"
+SEED="${SEED:-18}"
+T_STEPS="${T_STEPS:-50}"
+N_MAX="${N_MAX:-35}"
+SRC_GUIDANCE_SCALE="${SRC_GUIDANCE_SCALE:-3.5}"
+TAR_GUIDANCE_SCALE="${TAR_GUIDANCE_SCALE:-5.0}"
+TAR_GUIDANCE_MAX="${TAR_GUIDANCE_MAX:-10.0}"
+GUIDANCE_POWER="${GUIDANCE_POWER:-1.0}"
+SCHEDULER_TYPE="${SCHEDULER_TYPE:-default_slower}"
+CASE_IDS_STR="${CASE_IDS_STR:-girl_skirt}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-outputs/v6_exp_latentblend}"
+
+export NUMBA_CACHE_DIR="${NUMBA_CACHE_DIR:-/tmp/numba_cache}"
+export MPLCONFIGDIR="${MPLCONFIGDIR:-/tmp/matplotlib_cache}"
+mkdir -p "${NUMBA_CACHE_DIR}" "${MPLCONFIGDIR}"
+
+DATASETS=(replace)
+
+EXTRA_ARGS=()
+if [[ -n "${CASE_IDS_STR:-}" ]]; then
+  read -r -a CASE_IDS <<< "${CASE_IDS_STR}"
+  EXTRA_ARGS+=(--case_ids "${CASE_IDS[@]}")
+fi
+if [[ -n "${EXCLUDE_CASE_IDS_STR:-}" ]]; then
+  read -r -a EXCLUDE_CASE_IDS <<< "${EXCLUDE_CASE_IDS_STR}"
+  EXTRA_ARGS+=(--exclude_case_ids "${EXCLUDE_CASE_IDS[@]}")
+fi
+if [[ "${OVERWRITE:-false}" == "true" ]]; then
+  EXTRA_ARGS+=(--overwrite)
+fi
+if [[ "${CONTINUE_ON_ERROR:-true}" == "true" ]]; then
+  EXTRA_ARGS+=(--continue_on_error)
+fi
+if [[ -n "${SCHEDULER_TYPE}" ]]; then
+  EXTRA_ARGS+=(--scheduler_type "${SCHEDULER_TYPE}")
+fi
+
+echo
+echo "========================================================================"
+echo "[src | v6_exp_latentblend]"
+echo "guide_mode=${GUIDE_MODE}"
+echo "datasets=${DATASETS[*]}"
+echo "case_ids=${CASE_IDS_STR}"
+echo "output_root=${OUTPUT_ROOT}"
+echo "continue_on_error=${CONTINUE_ON_ERROR:-true} overwrite=${OVERWRITE:-false}"
+echo "device=${DEVICE_NUMBER} seed=${SEED} T_steps=${T_STEPS}"
+echo "n_max=${N_MAX} src_gs=${SRC_GUIDANCE_SCALE} tar_gs=${TAR_GUIDANCE_SCALE}"
+echo "tar_guidance_max=${TAR_GUIDANCE_MAX} guidance_power=${GUIDANCE_POWER} scheduler=${SCHEDULER_TYPE:-preset_default}"
+echo "========================================================================"
+
+"${PYTHON_BIN}" src/batch_run_sv3d_variants.py \
+  --preset v6_exp_latentblend \
+  --guide_mode "${GUIDE_MODE}" \
+  --datasets "${DATASETS[@]}" \
+  --output_root "${OUTPUT_ROOT}" \
+  --device_number "${DEVICE_NUMBER}" \
+  --seed "${SEED}" \
+  --T_steps "${T_STEPS}" \
+  --n_max "${N_MAX}" \
+  --src_guidance_scale "${SRC_GUIDANCE_SCALE}" \
+  --tar_guidance_scale "${TAR_GUIDANCE_SCALE}" \
+  --tar_guidance_max "${TAR_GUIDANCE_MAX}" \
+  --guidance_power "${GUIDANCE_POWER}" \
+  "${EXTRA_ARGS[@]}"
